@@ -203,3 +203,4 @@ class Equivalence(Formula):
     def clone(self):
         return Equivalence(self.left.clone(), self.right.clone())
 
+
