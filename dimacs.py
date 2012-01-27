@@ -24,9 +24,11 @@ class DimacsFormatVisitor():
         self.clauses.extend([self.formatClause(cl) for cl in c])
 
     def formatClause(self, clause):
+        assert isinstance(clause, Disjunction)
         return " ".join([self.formatVar(v) for v in clause.subf] + ["0"])
 
     def formatVar(self, var):
+        assert isinstance(var, Negation) or isinstance(var, Variable)
         if isinstance(var, Negation):
             return "-%s" % self.formatVar(var.subf)
         else:

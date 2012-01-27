@@ -2,16 +2,20 @@ __author__ = 'Keznikl'
 
 from formula import *
 
-def several_perf_posibilites_unknown_cause(method = "", possibilities = []):
+def several_perf_posibilites_unknown_cause(method = "", possibilities = [], cnf = False):
     if not possibilities:
         return
-    return Disjunction([
-    Conjunction([
-        Variable("P" + method + p + "1"),
-        Variable("P" + method + p + "2")
+    ret = Disjunction([
+        Conjunction([
+            Variable("P" + method + p + "1"),
+            Variable("P" + method + p + "2")
+        ])
+        for p in possibilities
     ])
-    for p in possibilities
-    ])
+    if cnf:
+        return ret.toCNF()
+    else:
+        return ret
 
 def several_perf_posibilites_use_fastest(method = "", possibilities = [], cnf = False):
     if not possibilities:

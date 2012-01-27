@@ -29,12 +29,15 @@ class Conjunction(Formula):
         return "(%s)" % " & ".join([f.__str__() for f in self.subf])
     def toCNF(self):
         clauses = []
-        for f in [f1.toCNF() for f1 in self.subf]:
-            if isinstance(f, Conjunction):
-                clauses.extend(f.subf)
-            else:
-                clauses.append(f)
-            #filter duplicates
+        if all(isinstance(c, Conjunction) for c in self.subf):
+            clauses = reduce(lambda l, c: l + c.toCNF().subf, self.subf, [])
+        else:
+            for f in [f1.toCNF() for f1 in self.subf]:
+                if isinstance(f, Conjunction):
+                    clauses.extend(f.subf)
+                else:
+                    clauses.append(f)
+        #filter duplicates
         filtered = []
         for c in clauses:
             if not [f for f in filtered if f.equals(c)]:

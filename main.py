@@ -11,9 +11,9 @@ from dimacs import DimacsFormatVisitor
 ###############################################################################
 parameters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 methods = ["m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-min_clauses = 5000
-min_vars = 5000
-
+min_clauses = 2000
+min_vars = 2000
+num_toplevel_disj = 0
 
 ###############################################################################
 # Generator Script
@@ -21,11 +21,13 @@ min_vars = 5000
 
 seed()
 
-def random_sublist(list = [], min_length = 1):
+def random_sublist(list = [], min_length = 1, max_length = None):
     if not list:
         return []
 
-    length = randint(min_length, len(list))
+    if max_length is None:
+        max_length = len(list)
+    length = randint(min_length, min(max_length, len(list)))
     selected = []
     while len(selected) < min(length, len(list)):
         rnd = choice(list)
@@ -34,23 +36,74 @@ def random_sublist(list = [], min_length = 1):
             list = [i for i in list if i!=rnd]
     return selected
 
+class RenameVisitor(Visitor):
+    def __init__(self, unique_prefix):
+        self.unique_prefix  = unique_prefix
+        self.vars = []
+    def acceptVariable(self, f):
+        f.name = self.unique_prefix + f.name
+        if not f.name in self.vars:
+            self.vars.append(f.name)
+    def numVars(self):
+        return len(self.vars)
+
+
 
 cur_clauses = 0
 cur_vars = 0
-formatter = DimacsFormatVisitor()
 
+print """
+=====================================
+TOP-LEVEL NON-PRIMITIVE CONJUNCTIONS:
+=====================================
+"""
+total = []
+iteration = 1;
 while cur_clauses < min_clauses or cur_vars < min_vars:
     current = []
     for m in random_sublist(methods):
         params = random_sublist(parameters, 2)
-        current.append(Conjunction(several_perf_posibilites_use_fastest(m, params, False)))
+        what = randint(0, 1)
+        current.append(Conjunction(several_perf_posibilites_use_fastest(m, params)))
 
     print "\n".join([f.__str__() for f in current])
+
+    cnf = Conjunction(current).toCNF()
+    total.append(cnf)
+
+    visitor = RenameVisitor(str(iteration))
     for f in current:
-        formatter.processClauses(f.toCNF().subf)
-    cur_clauses = formatter.numClauses()
-    cur_vars = formatter.numVars()
-    formatter.reset()
+        f.visit(visitor)
+
+    cur_clauses += len(cnf.subf)
+    cur_vars += visitor.numVars()
+    iteration+=1
+
+print """
+=====================================
+TOP-LEVEL NON-PRIMITIVE CONJUNCTIONS:
+=====================================
+"""
+l = random_sublist(methods, num_toplevel_disj, num_toplevel_disj)
+for m in l:
+    params = random_sublist(parameters, 2)
+    f = several_perf_posibilites_unknown_cause(m, params)
+    print f.__str__()
+    total.append(f)
+
+print """
+=====================================
+CONVERTING TO CNF..."""
+top = Conjunction(total).toCNF()
+
+formatter = DimacsFormatVisitor()
+
+formatter.processClauses(top.subf)
+
+print """DONE
+=====================================
+
+"""
 
 print """
 =====================================
@@ -59,3 +112,10 @@ DIMACS:
 """
 print formatter.getDimacsString()
 
+print """
+=====================================
+DONE.
+vars:    %d
+clauses: %d
+=====================================
+""" % (formatter.numVars(), formatter.numClauses())
