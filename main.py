@@ -99,9 +99,9 @@ for m in l:
 
 print """
 =====================================
-CONVERTING TO CNF..."""
+CONVERTING TO CNF"""
 top = Conjunction(total).toCNF()
-
+print "..."
 formatter = DimacsFormatVisitor()
 
 formatter.processClauses(top.subf)

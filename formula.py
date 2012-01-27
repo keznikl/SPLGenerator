@@ -37,7 +37,7 @@ class Conjunction(Formula):
             return self
         clauses = []
         if all(isinstance(c, Conjunction) for c in self.subf):
-            clauses = reduce(lambda l, c: l + c.toCNF().subf, self.subf, [])
+            [clauses.extend(c.toCNF().subf) for c in self.subf]
         else:
             for f in [f1.toCNF() for f1 in self.subf]:
                 if isinstance(f, Conjunction):
