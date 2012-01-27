@@ -4,16 +4,22 @@ from random import *
 from generators import *
 from dimacs import DimacsFormatVisitor
 
-seed()
 
-#print Implication(
-#    Conjunction([Variable("PMA1"), Variable("PMA2")]),
-#    Conjunction([Variable("PMB1"), Variable("PMB2")])).toCNF().__str__()
 
+###############################################################################
+# Settings
+###############################################################################
 parameters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 methods = ["m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
 min_clauses = 5000
 min_vars = 5000
+
+
+###############################################################################
+# Generator Script
+###############################################################################
+
+seed()
 
 def random_sublist(list = [], min_length = 1):
     if not list:
@@ -46,14 +52,6 @@ while cur_clauses < min_clauses or cur_vars < min_vars:
     cur_vars = formatter.numVars()
     formatter.reset()
 
-
-
-
-
-
-
-
-
 print """
 =====================================
 DIMACS:
@@ -61,4 +59,3 @@ DIMACS:
 """
 print formatter.getDimacsString()
 
-#print "\n".join([f.__str__() for f in several_perf_posibilites_use_fastest("m", ["a", "b", "c"], False)])
