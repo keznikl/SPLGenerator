@@ -40,6 +40,8 @@ cur_vars = 0
 formatter = DimacsFormatVisitor()
 
 
+
+
 while cur_clauses < min_clauses or cur_vars < min_vars:
     current = []
     for m in random_sublist(methods):
