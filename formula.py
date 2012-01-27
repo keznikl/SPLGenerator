@@ -15,6 +15,8 @@ class Visitor:
         pass
 
 class Formula:
+    def __init__(self, is_cnf = False):
+        self.is_cnf = is_cnf
     def toCNF(self):
         pass
     def visit(self, visitor):
@@ -25,11 +27,14 @@ class Formula:
         pass
 
 class Conjunction(Formula):
-    def __init__(self, subformulas=[]):
+    def __init__(self, subformulas, is_cnf=False):
+        Formula.__init__(self, is_cnf)
         self.subf = subformulas
     def __str__(self):
         return "(%s)" % " & ".join([f.__str__() for f in self.subf])
     def toCNF(self):
+        if self.is_cnf:
+            return self
         clauses = []
         if all(isinstance(c, Conjunction) for c in self.subf):
             clauses = reduce(lambda l, c: l + c.toCNF().subf, self.subf, [])
@@ -44,7 +49,7 @@ class Conjunction(Formula):
         for c in clauses:
             if not [f for f in filtered if f.equals(c)]:
                 filtered.append(c)
-        return Conjunction(sorted(filtered, key=lambda x: x.__str__()))
+        return Conjunction(sorted(filtered, key=lambda x: x.__str__()), is_cnf=True)
 
 
     def equals(self, f):
@@ -59,14 +64,17 @@ class Conjunction(Formula):
             f.visit(visitor)
 
     def clone(self):
-        return Conjunction([f.clone() for f in self.subf])
+        return Conjunction([f.clone() for f in self.subf], is_cnf=self.is_cnf)
 
 class Disjunction(Formula):
-    def __init__(self, subformulas=[]):
+    def __init__(self, subformulas=[], is_cnf=False):
+        Formula.__init__(self, is_cnf)
         self.subf = subformulas
     def __str__(self):
         return "(%s)" % " | ".join([f.__str__() for f in self.subf])
     def toCNF(self):
+        if self.is_cnf:
+            return self
         terms = []
         conjunctions = []
         for f in [f1.toCNF() for f1 in self.subf]:
@@ -82,7 +90,6 @@ class Disjunction(Formula):
             rest = [cl for cl in conjunctions if cl != c]
             clauses.extend([Disjunction([cl] + terms + rest).toCNF() for cl in c.subf])
 
-
         if clauses:
             cnfClauses = Conjunction(clauses).toCNF().subf
             #filter duplicates
@@ -91,9 +98,9 @@ class Disjunction(Formula):
                 if not [f for f in filtered if f.equals(c)]:
                     filtered.append(c)
 
-            return Conjunction(sorted(filtered, key=lambda x: x.__str__()))
+            return Conjunction(sorted(filtered, key=lambda x: x.__str__()), is_cnf=True)
         else:
-            return Disjunction(sorted(terms, key=lambda x: x.__str__()))
+            return Disjunction(sorted(terms, key=lambda x: x.__str__()), is_cnf=True)
 
     def equals(self, f):
         if not isinstance(f, Disjunction):
@@ -107,18 +114,21 @@ class Disjunction(Formula):
             f.visit(visitor)
 
     def clone(self):
-        return Disjunction([f.clone() for f in self.subf])
+        return Disjunction([f.clone() for f in self.subf], is_cnf=self.is_cnf)
 
 class Negation(Formula):
-    def __init__(self, subformula=None):
+    def __init__(self, subformula=None, is_cnf=False):
+        Formula.__init__(self, is_cnf)
         self.subf = subformula
     def __str__(self):
         return "!%s" % self.subf.__str__()
     def toCNF(self):
-        if isinstance(self.subf, Variable):
+        if self.is_cnf:
             return self
+        if isinstance(self.subf, Variable):
+            return Negation(self.subf.toCNF(), is_cnf=True)
         if isinstance(self.subf, Negation):
-            return self.subf.subf
+            return self.subf.subf.toCNF()
         elif isinstance(self.subf, Disjunction):
             return Conjunction([Negation(f) for f in self.subf.subf]).toCNF()
         elif isinstance(self.subf, Conjunction):
@@ -136,15 +146,18 @@ class Negation(Formula):
         self.subf.visit(visitor)
 
     def clone(self):
-        return Negation(self.subf.clone())
+        return Negation(self.subf.clone(), is_cnf=self.is_cnf)
 
 class Variable(Formula):
-    def __init__(self, name):
+    def __init__(self, name, is_cnf=False):
+        Formula.__init__(self, is_cnf)
         self.name = name
     def __str__(self):
         return self.name
     def toCNF(self):
-        return self
+        if self.is_cnf:
+            return self
+        return Variable(self.name, is_cnf=True)
     def equals(self, c):
         if not isinstance(c, Variable):
             return False
@@ -152,10 +165,11 @@ class Variable(Formula):
     def visit(self, visitor):
         visitor.acceptVariable(self)
     def clone(self):
-        return Variable(self.name)
+        return Variable(self.name, is_cnf=self.is_cnf)
 
 class Implication(Formula):
-    def __init__(self, premise, conclusion):
+    def __init__(self, premise, conclusion, is_cnf=False):
+        Formula.__init__(self, is_cnf)
         self.premise = premise
         self.conclusion = conclusion
 
@@ -180,7 +194,8 @@ class Implication(Formula):
 
 
 class Equivalence(Formula):
-    def __init__(self, left, right):
+    def __init__(self, left, right, is_cnf=False):
+        Formula.__init__(self, is_cnf)
         self.left = left
         self.right = right
 
