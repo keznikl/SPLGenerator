@@ -1,9 +1,23 @@
 __author__ = 'Keznikl'
 
-
+class Visitor:
+    def acceptConjunction(self, f):
+        pass
+    def acceptDisjunction(self, f):
+        pass
+    def acceptNegation(self, f):
+        pass
+    def acceptImplication(self, f):
+        pass
+    def acceptEquivalence(self, f):
+        pass
+    def acceptVariable(self, f):
+        pass
 
 class Formula:
     def toCNF(self):
+        pass
+    def visit(self, visitor):
         pass
     def equals(self, f):
         pass
@@ -20,13 +34,24 @@ class Conjunction(Formula):
                 clauses.extend(f.subf)
             else:
                 clauses.append(f)
-        return Conjunction(sorted(clauses, key=lambda x: x.__str__()))
+            #filter duplicates
+        filtered = []
+        for c in clauses:
+            if not [f for f in filtered if f.equals(c)]:
+                filtered.append(c)
+        return Conjunction(sorted(filtered, key=lambda x: x.__str__()))
+
 
     def equals(self, f):
         if not isinstance(f, Conjunction):
             return False
         zipped = zip(self.subf, f.subf)
         return all(c1.equals(c2) for (c1, c2) in zipped)
+
+    def visit(self, visitor):
+        visitor.acceptConjunction(self)
+        for f in self.subf:
+            f.visit(visitor)
 
 
 class Disjunction(Formula):
@@ -69,6 +94,11 @@ class Disjunction(Formula):
         zipped = zip(self.subf, f.subf)
         return all(c1.equals(c2) for (c1, c2) in zipped)
 
+    def visit(self, visitor):
+        visitor.acceptDisjunction(self)
+        for f in self.subf:
+            f.visit(visitor)
+
 
 class Negation(Formula):
     def __init__(self, subformula=None):
@@ -92,6 +122,9 @@ class Negation(Formula):
             return False
         return self.subf.equals(f.subf)
 
+    def visit(self, visitor):
+        visitor.acceptNegation(self)
+        self.subf.visit(visitor)
 
 class Variable(Formula):
     def __init__(self, name):
@@ -104,6 +137,8 @@ class Variable(Formula):
         if not isinstance(c, Variable):
             return False
         return self.name == c.name
+    def visit(self, visitor):
+        visitor.acceptVariable(self)
 
 class Implication(Formula):
     def __init__(self, premise, conclusion):
@@ -121,6 +156,12 @@ class Implication(Formula):
             return False
         return self.premise.equals(f.premise) and self.conclusion.equals(f.conclusion)
 
+    def visit(self, visitor):
+        visitor.acceptImplication(self)
+        self.premise.visit(visitor)
+        self.conclusion.visit(visitor)
+
+
 class Equivalence(Formula):
     def __init__(self, left, right):
         self.left = left
@@ -136,4 +177,9 @@ class Equivalence(Formula):
         if not isinstance(f, Equivalence):
             return False
         return self.left.equals(f.left) and self.right.equals(f.right)
+
+    def visit(self, visitor):
+        visitor.acceptEquivalence(self)
+        self.left.visit(visitor)
+        self.right.visit(visitor)
 
