@@ -21,7 +21,6 @@ min_vars = 5000
 
 seed()
 
-
 def random_sublist(list = [], min_length = 1):
     if not list:
         return []
