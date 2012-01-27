@@ -77,6 +77,8 @@ class Negation(Formula):
     def toCNF(self):
         if isinstance(self.subf, Variable):
             return self
+        if isinstance(self.subf, Negation):
+            return self.subf.subf
         elif isinstance(self.subf, Disjunction):
             return Conjunction([Negation(f) for f in self.subf.subf]).toCNF()
         elif isinstance(self.subf, Conjunction):
@@ -127,7 +129,7 @@ class Equivalence(Formula):
         return "(%s <=> %s)" % (self.left.__str__(), self.right.__str__())
 
     def toCNF(self):
-        return Conjunction([Implication(self.left), Implication(self.right)]).toCNF()
+        return Conjunction([Implication(self.left, self.right), Implication(self.right, self.left)]).toCNF()
 
     def equals(self, f):
         if not isinstance(f, Equivalence):
@@ -135,18 +137,45 @@ class Equivalence(Formula):
         return self.left.equals(f.left) and self.right.equals(f.right)
 
 
-def test():
+#print Implication(
+#    Conjunction([Variable("PMA1"), Variable("PMA2")]),
+#    Conjunction([Variable("PMB1"), Variable("PMB2")])).toCNF().__str__()
 
-    print Disjunction([Conjunction([Variable("PMA1"), Variable("PMA2")]),
-                 Conjunction([Variable("PMB1"), Variable("PMB2")])]).toCNF().__str__()
 
 def several_perf_posibilites_unknown_cause(method = "", possibilities = []):
     if not possibilities:
         return
-    print Disjunction([
+    return Disjunction([
         Conjunction([
             Variable("P" + method + p + "1"),
             Variable("P" + method + p + "2")
         ])
         for p in possibilities
-    ]).toCNF().__str__()
+    ])
+
+def several_perf_posibilites_use_fastest(method = "", possibilities = []):
+    if not possibilities:
+        return
+    return  [
+        Conjunction(
+            # Pa<b & Pa<c <=> Sa
+            [Equivalence(
+                Conjunction([
+                    Variable("P" + p + "<" + r)
+                    for r in possibilities if r != p
+                ]),
+                Variable("S" + p)
+            )
+            for p in possibilities]
+        )] + [
+        Conjunction(
+            # (Pa<b <=> !Pb<a)
+            [Equivalence(
+                Variable("P" + a + "<" + b),
+                Negation(Variable("P" + b + "<" + a))
+            )
+            for a in possibilities for b in possibilities if a != b]
+        )]
+
+
+print "\n".join([f.toCNF().__str__() for f in several_perf_posibilites_use_fastest("m", ["a", "b", "c"])])
