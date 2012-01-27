@@ -13,8 +13,8 @@ parameters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 methods = ["m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
 min_clauses = 1000
 min_vars = 1000
-num_toplevel_disj = 3
-max_perf_param_variants= 2
+prob_of_unknown_cause_subformula = 0.3
+max_perf_param_variants= 5
 
 ###############################################################################
 # Generator Script
@@ -28,7 +28,7 @@ def random_sublist(list = [], min_length = 1, max_length = None):
 
     if max_length is None:
         max_length = len(list)
-    length = randint(min_length, min(max_length, len(list)))
+    length = randint(min(min_length, len(list)), min(max_length, len(list)))
     selected = []
     while len(selected) < min(length, len(list)):
         rnd = choice(list)
@@ -55,7 +55,7 @@ cur_vars = 0
 
 print """
 =====================================
-TOP-LEVEL NON-PRIMITIVE CONJUNCTIONS:
+GENERATING FORMULAS:
 =====================================
 """
 total = []
@@ -64,7 +64,12 @@ while cur_clauses < min_clauses or cur_vars < min_vars:
 
     m = choice(methods)
     params = random_sublist(parameters, 2)
-    current = Conjunction(several_perf_posibilites_use_fastest(m, params))
+
+    use_unknown_cause = random() < prob_of_unknown_cause_subformula
+    if use_unknown_cause:
+        current = Conjunction([several_perf_posibilites_unknown_cause(m, params, True)])
+    else:
+        current = Conjunction(several_perf_posibilites_use_fastest(m, params, True))
 
     print "\n".join([f.__str__() for f in current.subf])
 
@@ -85,17 +90,7 @@ while cur_clauses < min_clauses or cur_vars < min_vars:
 
     iteration+=1
 
-print """
-=====================================
-TOP-LEVEL NON-PRIMITIVE CONJUNCTIONS:
-=====================================
-"""
-l = random_sublist(methods, num_toplevel_disj, num_toplevel_disj)
-for m in l:
-    params = random_sublist(parameters, 2)
-    f = several_perf_posibilites_unknown_cause(m, params)
-    print f.__str__()
-    total.append(f)
+
 
 print """
 =====================================

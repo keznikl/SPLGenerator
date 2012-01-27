@@ -88,7 +88,7 @@ class Disjunction(Formula):
         clauses = []
         for c in conjunctions:
             rest = [cl for cl in conjunctions if cl != c]
-            clauses.extend([Disjunction([cl] + terms + rest).toCNF() for cl in c.subf])
+            clauses.extend([Disjunction([cl] + terms + rest) for cl in c.subf])
 
         if clauses:
             cnfClauses = Conjunction(clauses).toCNF().subf
