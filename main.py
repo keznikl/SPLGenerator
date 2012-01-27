@@ -11,9 +11,10 @@ from dimacs import DimacsFormatVisitor
 ###############################################################################
 parameters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 methods = ["m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-min_clauses = 2000
-min_vars = 2000
-num_toplevel_disj = 0
+min_clauses = 1000
+min_vars = 1000
+num_toplevel_disj = 3
+max_perf_param_variants= 2
 
 ###############################################################################
 # Generator Script
@@ -60,23 +61,28 @@ TOP-LEVEL NON-PRIMITIVE CONJUNCTIONS:
 total = []
 iteration = 1;
 while cur_clauses < min_clauses or cur_vars < min_vars:
-    current = []
-    for m in random_sublist(methods):
-        params = random_sublist(parameters, 2)
-        what = randint(0, 1)
-        current.append(Conjunction(several_perf_posibilites_use_fastest(m, params)))
 
-    print "\n".join([f.__str__() for f in current])
+    m = choice(methods)
+    params = random_sublist(parameters, 2)
+    current = Conjunction(several_perf_posibilites_use_fastest(m, params))
 
-    cnf = Conjunction(current).toCNF()
-    total.append(cnf)
+    print "\n".join([f.__str__() for f in current.subf])
 
-    visitor = RenameVisitor(str(iteration))
-    for f in current:
-        f.visit(visitor)
+    cnf = current.toCNF()
 
-    cur_clauses += len(cnf.subf)
-    cur_vars += visitor.numVars()
+    # several iterations correspond to perf. parameter variants n = {10, 100, ...}
+    param_variants = randint(1, max_perf_param_variants)
+    for variant in xrange(param_variants):
+        clone = cnf.clone()
+
+        prefix = "%d_%d" % (iteration, variant)
+        visitor = RenameVisitor(prefix)
+        clone.visit(visitor)
+
+        total.append(clone)
+        cur_clauses += len(clone.subf)
+        cur_vars += visitor.numVars()
+
     iteration+=1
 
 print """

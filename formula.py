@@ -21,6 +21,8 @@ class Formula:
         pass
     def equals(self, f):
         pass
+    def clone(self):
+        pass
 
 class Conjunction(Formula):
     def __init__(self, subformulas=[]):
@@ -56,6 +58,8 @@ class Conjunction(Formula):
         for f in self.subf:
             f.visit(visitor)
 
+    def clone(self):
+        return Conjunction([f.clone() for f in self.subf])
 
 class Disjunction(Formula):
     def __init__(self, subformulas=[]):
@@ -102,6 +106,8 @@ class Disjunction(Formula):
         for f in self.subf:
             f.visit(visitor)
 
+    def clone(self):
+        return Disjunction([f.clone() for f in self.subf])
 
 class Negation(Formula):
     def __init__(self, subformula=None):
@@ -129,6 +135,9 @@ class Negation(Formula):
         visitor.acceptNegation(self)
         self.subf.visit(visitor)
 
+    def clone(self):
+        return Negation(self.subf.clone())
+
 class Variable(Formula):
     def __init__(self, name):
         self.name = name
@@ -142,6 +151,8 @@ class Variable(Formula):
         return self.name == c.name
     def visit(self, visitor):
         visitor.acceptVariable(self)
+    def clone(self):
+        return Variable(self.name)
 
 class Implication(Formula):
     def __init__(self, premise, conclusion):
@@ -164,6 +175,9 @@ class Implication(Formula):
         self.premise.visit(visitor)
         self.conclusion.visit(visitor)
 
+    def clone(self):
+        return Implication(self.premise.clone(), self.conclusion.clone())
+
 
 class Equivalence(Formula):
     def __init__(self, left, right):
@@ -185,4 +199,7 @@ class Equivalence(Formula):
         visitor.acceptEquivalence(self)
         self.left.visit(visitor)
         self.right.visit(visitor)
+
+    def clone(self):
+        return Equivalence(self.left.clone(), self.right.clone())
 
