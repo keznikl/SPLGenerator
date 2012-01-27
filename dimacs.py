@@ -15,7 +15,7 @@ class DimacsFormatVisitor():
             self.clauses = []
 
     def getDimacsString(self):
-        num_variables = self.var_counter - 1;
+        num_variables = self.var_counter - 1
         num_clauses = len(self.clauses)
         header = "c code verification example\np cnf %d %d\n" % (num_variables, num_clauses)
         return header + "\n".join(self.clauses)
@@ -37,3 +37,8 @@ class DimacsFormatVisitor():
                 self.var_counter += 1
                 self.variables[var.name] = vcode
             return vcode
+
+    def numClauses(self):
+        return len(self.clauses)
+    def numVars(self):
+        return self.var_counter - 1

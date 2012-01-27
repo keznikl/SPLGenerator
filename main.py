@@ -12,7 +12,8 @@ seed()
 
 parameters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 methods = ["m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-max_iterations = 15
+min_clauses = 5000
+min_vars = 5000
 
 def random_sublist(list = [], min_length = 1):
     if not list:
@@ -28,22 +29,36 @@ def random_sublist(list = [], min_length = 1):
     return selected
 
 
-formulas = []
-for i in xrange(randint(1, max_iterations)):
+cur_clauses = 0
+cur_vars = 0
+formatter = DimacsFormatVisitor()
+
+while cur_clauses < min_clauses or cur_vars < min_vars:
+    current = []
     for m in random_sublist(methods):
         params = random_sublist(parameters, 2)
-        formulas.append(Conjunction(several_perf_posibilites_use_fastest(m, params, False)))
+        current.append(Conjunction(several_perf_posibilites_use_fastest(m, params, False)))
 
-print "\n".join([f.__str__() for f in formulas])
+    print "\n".join([f.__str__() for f in current])
+    for f in current:
+        formatter.processClauses(f.toCNF().subf)
+    cur_clauses = formatter.numClauses()
+    cur_vars = formatter.numVars()
+    formatter.reset()
+
+
+
+
+
+
+
+
+
 print """
 =====================================
 DIMACS:
 =====================================
 """
-formatter = DimacsFormatVisitor()
-for f in formulas:
-    formatter.processClauses(f.toCNF().subf)
-    formatter.reset()
 print formatter.getDimacsString()
 
 #print "\n".join([f.__str__() for f in several_perf_posibilites_use_fastest("m", ["a", "b", "c"], False)])
