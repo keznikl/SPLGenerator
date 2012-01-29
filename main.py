@@ -3,6 +3,7 @@ __author__ = 'Keznikl'
 from random import *
 from generators import *
 from dimacs import DimacsFormatVisitor
+import sys
 
 
 
@@ -15,6 +16,11 @@ min_clauses = 1000
 min_vars = 1000
 prob_of_unknown_cause_subformula = 0.3
 max_perf_param_variants= 5
+
+
+if len(sys.argv) == 3:
+    min_vars = int(sys.argv[1])
+    min_clauses = int(sys.argv[2])
 
 ###############################################################################
 # Generator Script
@@ -53,7 +59,7 @@ class RenameVisitor(Visitor):
 cur_clauses = 0
 cur_vars = 0
 
-print """
+print >> sys.stderr, """
 =====================================
 GENERATING FORMULAS:
 =====================================
@@ -71,7 +77,7 @@ while cur_clauses < min_clauses or cur_vars < min_vars:
     else:
         current = Conjunction(several_perf_posibilites_use_fastest(m, params, True))
 
-    print "\n".join([f.__str__() for f in current.subf])
+    print >> sys.stderr, "\n".join([f.__str__() for f in current.subf])
 
     cnf = current.toCNF()
 
@@ -92,28 +98,28 @@ while cur_clauses < min_clauses or cur_vars < min_vars:
 
 
 
-print """
+print >> sys.stderr, """
 =====================================
 CONVERTING TO CNF"""
 top = Conjunction(total).toCNF()
-print "..."
+print >> sys.stderr, "..."
 formatter = DimacsFormatVisitor()
 
 formatter.processClauses(top.subf)
 
-print """DONE
+print >> sys.stderr, """DONE
 =====================================
 
 """
 
-print """
+print >> sys.stderr, """
 =====================================
 DIMACS:
 =====================================
 """
 print formatter.getDimacsString()
 
-print """
+print >> sys.stderr, """
 =====================================
 DONE.
 vars:    %d
