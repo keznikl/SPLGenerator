@@ -1,6 +1,7 @@
 __author__ = 'Keznikl'
 
 from formula import *
+import sys
 
 class DimacsFormatVisitor():
     def __init__(self):
@@ -21,11 +22,15 @@ class DimacsFormatVisitor():
         return header + "\n".join(self.clauses)
 
     def processClauses(self, c):
+        print >> sys.stderr, "Processing %d clauses" % len(c)
         self.clauses.extend([self.formatClause(cl) for cl in c])
 
     def formatClause(self, clause):
-        assert isinstance(clause, Disjunction)
-        return " ".join([self.formatVar(v) for v in clause.subf] + ["0"])
+        assert isinstance(clause, Disjunction) or isinstance(clause, Negation) or isinstance(clause, Variable), 'clause cannot be a ' + clause.__class__.__name__
+        if isinstance(clause, Disjunction):  
+            return " ".join([self.formatVar(v) for v in clause.subf] + ["0"])
+        else:
+            return self.formatVar(clause) + " 0"
 
     def formatVar(self, var):
         assert isinstance(var, Negation) or isinstance(var, Variable)

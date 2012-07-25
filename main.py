@@ -1,3 +1,4 @@
+from tseitin import tseitin
 __author__ = 'Keznikl'
 
 from random import *
@@ -59,6 +60,11 @@ class RenameVisitor(Visitor):
 cur_clauses = 0
 cur_vars = 0
 
+from tseitin import toCNFClauses, toCNF
+
+import datetime 
+
+
 print >> sys.stderr, """
 =====================================
 GENERATING FORMULAS:
@@ -66,29 +72,37 @@ GENERATING FORMULAS:
 """
 total = []
 iteration = 1;
+
+start = datetime.datetime.now()
+totalTime = datetime.timedelta(0)
+
 while cur_clauses < min_clauses or cur_vars < min_vars:
 
-    m = choice(methods)
+    m = choice(methods)    
     params = random_sublist(parameters, 2)
 
     use_unknown_cause = random() < prob_of_unknown_cause_subformula
-    if use_unknown_cause:
-        current = Conjunction([several_perf_posibilites_unknown_cause(m, params, True)])
-    else:
-        current = Conjunction(several_perf_posibilites_use_fastest(m, params, True))
+    
+    
+    if use_unknown_cause:        
+        current = Conjunction([several_perf_posibilites_unknown_cause(m, params, False)])
+    else:        
+        current = Conjunction(several_perf_posibilites_use_fastest(m, params, False))
 
     print >> sys.stderr, "\n".join([f.__str__() for f in current.subf])
 
-    cnf = current.toCNF()
+    cnf = current #toCNF(current)
 
     # several iterations correspond to perf. parameter variants n = {10, 100, ...}
     param_variants = randint(1, max_perf_param_variants)
+    print >> sys.stderr, "generating %d variants of perf. params" % param_variants 
     for variant in xrange(param_variants):
         clone = cnf.clone()
 
         prefix = "%d_%d" % (iteration, variant)
-        visitor = RenameVisitor(prefix)
+        visitor = RenameVisitor(prefix)    
         clone.visit(visitor)
+        
 
         total.append(clone)
         cur_clauses += len(clone.subf)
@@ -96,29 +110,48 @@ while cur_clauses < min_clauses or cur_vars < min_vars:
 
     iteration+=1
 
-
-
-print >> sys.stderr, """
-=====================================
-CONVERTING TO CNF"""
-top = Conjunction(total).toCNF()
-print >> sys.stderr, "..."
-formatter = DimacsFormatVisitor()
-
-formatter.processClauses(top.subf)
+end = datetime.datetime.now()
 
 print >> sys.stderr, """DONE
 =====================================
-
 """
+print >> sys.stderr, "Completed in ", end - start
+totalTime += end - start
+
+print >> sys.stderr, """
+=====================================
+CONVERTING TO CNF
+=====================================
+"""
+
+start = datetime.datetime.now()
+
+whole = Conjunction(total)
+clauses = toCNFClauses(whole.clone())
+#clauses = Conjunction(total).toCNF().subf
+
+
+end = datetime.datetime.now()
+print >> sys.stderr, """DONE
+=====================================
+"""
+print >> sys.stderr, "Completed in ", end - start
+totalTime += end - start
+
 
 print >> sys.stderr, """
 =====================================
 DIMACS:
 =====================================
 """
+start = datetime.datetime.now()
+
+formatter = DimacsFormatVisitor()
+formatter.processClauses(clauses)
+
 print formatter.getDimacsString()
 
+end = datetime.datetime.now()
 print >> sys.stderr, """
 =====================================
 DONE.
@@ -126,3 +159,9 @@ vars:    %d
 clauses: %d
 =====================================
 """ % (formatter.numVars(), formatter.numClauses())
+end = datetime.datetime.now()
+print >> sys.stderr, "Completed in ", end - start  
+
+totalTime += end - start
+print >> sys.stderr, "Total: ", totalTime
+

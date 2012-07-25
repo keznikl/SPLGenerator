@@ -25,13 +25,20 @@ class Formula:
         pass
     def clone(self):
         pass
+    def derivationTree(self):
+        pass
+    def getChildren(self):
+        return []
+    def encodeLocal(self):
+        pass
 
 class Conjunction(Formula):
     def __init__(self, subformulas, is_cnf=False):
         Formula.__init__(self, is_cnf)
-        self.subf = subformulas
+        self.subf = subformulas    
     def __str__(self):
         return "(%s)" % " & ".join([f.__str__() for f in self.subf])
+       
     def toCNF(self):
         if self.is_cnf:
             return self
@@ -50,7 +57,19 @@ class Conjunction(Formula):
             if not [f for f in filtered if f.equals(c)]:
                 filtered.append(c)
         return Conjunction(sorted(filtered, key=lambda x: x.__str__()), is_cnf=True)
-
+    
+    def encodeLocal(self, newVar, subf):
+        return Equivalence(newVar, Conjunction(subf)).toCNF()
+    def getChildren(self):
+        return self.subf
+    def derivationTree(self):
+        if len(self.subf) < 1:
+            raise Exception("To few subformulas in a conjunction")
+        elif len(self.subf) == 1:
+            return self.subf[0].derivationTree()        
+        else:
+            return Conjunction([e.derivationTree() for e in self.subf])
+        
 
     def equals(self, f):
         if not isinstance(f, Conjunction):
@@ -101,7 +120,19 @@ class Disjunction(Formula):
             return Conjunction(sorted(filtered, key=lambda x: x.__str__()), is_cnf=True)
         else:
             return Disjunction(sorted(terms, key=lambda x: x.__str__()), is_cnf=True)
-
+    
+    def derivationTree(self):
+        if len(self.subf) < 2:
+            raise Exception("To few subformulas in a conjunction") 
+        elif len(self.subf) == 1:
+            return self.subf[0].derivationTree()       
+        else:
+            return Disjunction([e.derivationTree() for e in self.subf])
+    def getChildren(self):
+        return self.subf
+    def encodeLocal(self, newVar, subf):
+        return Equivalence(newVar, Disjunction(subf)).toCNF()
+    
     def equals(self, f):
         if not isinstance(f, Disjunction):
             return False
@@ -135,6 +166,14 @@ class Negation(Formula):
             return Disjunction([Negation(f) for f in self.subf.subf]).toCNF()
         else:
             return Negation(self.subf.toCNF()).toCNF()
+        
+    def derivationTree(self):    
+        return Negation(self.subf.derivationTree())
+    def getChildren(self):
+        return [self.subf]
+    def encodeLocal(self, newVar, subf):
+        assert len(subf) == 1
+        return Equivalence(newVar, Negation(subf[0])).toCNF()
 
     def equals(self, f):
         if not isinstance(f, Negation):
@@ -158,6 +197,14 @@ class Variable(Formula):
         if self.is_cnf:
             return self
         return Variable(self.name, is_cnf=True)
+    
+    def derivationTree(self):    
+        return self.clone()
+    def getChildren(self):
+        return []
+    def encodeLocal(self, newVar, subf):
+        assert False, "encodeLocal shouldn't be called on variable nodes"   
+             
     def equals(self, c):
         if not isinstance(c, Variable):
             return False
@@ -166,6 +213,7 @@ class Variable(Formula):
         visitor.acceptVariable(self)
     def clone(self):
         return Variable(self.name, is_cnf=self.is_cnf)
+  
 
 class Implication(Formula):
     def __init__(self, premise, conclusion, is_cnf=False):
@@ -178,6 +226,14 @@ class Implication(Formula):
 
     def toCNF(self):
         return Disjunction([Negation(self.premise), self.conclusion]).toCNF()
+    
+    def derivationTree(self):    
+        return Implication(self.premise.derivationTree(), self.conclusion.derivationTree())
+    def getChildren(self):
+        return [self.premise, self.conclusion]
+    def encodeLocal(self, newVar, subf):
+        assert len(subf) == 2
+        return Equivalence(newVar, Implication(subf[0], subf[1])).toCNF()
 
     def equals(self, f):
         if not isinstance(f, Implication):
@@ -204,6 +260,14 @@ class Equivalence(Formula):
 
     def toCNF(self):
         return Conjunction([Implication(self.left, self.right), Implication(self.right, self.left)]).toCNF()
+    
+    def derivationTree(self):    
+        return Equivalence(self.left.derivationTree(), self.right.derivationTree())
+    def getChildren(self):
+        return [self.left, self.right]
+    def encodeLocal(self, newVar, subf):
+        assert len(subf) == 2
+        return Equivalence(newVar, Equivalence(subf[0], subf[1])).toCNF()
 
     def equals(self, f):
         if not isinstance(f, Equivalence):
