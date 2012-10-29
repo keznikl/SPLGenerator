@@ -13,21 +13,31 @@ import sys
 ###############################################################################
 parameters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
 methods = ["m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-min_clauses = 1000
-min_vars = 1000
+min_clauses = 1
+min_vars = 1
 prob_of_unknown_cause_subformula = 0.3
 max_perf_param_variants= 5
 
 
-if len(sys.argv) == 3:
+if len(sys.argv) >= 3:    
     min_vars = int(sys.argv[1])
     min_clauses = int(sys.argv[2])
+    print >> sys.stderr, "min_vars: " + str(min_vars)
+    print >> sys.stderr, "min_clauses: " + str(min_clauses)
+    
+if len(sys.argv) >= 4:
+    print >> sys.stderr, "setting seed to " + sys.argv[3]
+    seed(int(sys.argv[3]))
+else:
+    seed()
+    
+
 
 ###############################################################################
 # Generator Script
 ###############################################################################
 
-seed()
+
 
 def random_sublist(list = [], min_length = 1, max_length = None):
     if not list:
@@ -60,7 +70,7 @@ class RenameVisitor(Visitor):
 cur_clauses = 0
 cur_vars = 0
 
-from tseitin import toCNFClauses, toCNF
+#from tseitin import toCNFClauses, toCNF
 
 import datetime 
 
@@ -127,8 +137,8 @@ CONVERTING TO CNF
 start = datetime.datetime.now()
 
 whole = Conjunction(total)
-clauses = toCNFClauses(whole.clone())
-#clauses = Conjunction(total).toCNF().subf
+#clauses = toCNFClauses(whole.clone())
+clauses = Conjunction(total).toCNF().subf
 
 
 end = datetime.datetime.now()
