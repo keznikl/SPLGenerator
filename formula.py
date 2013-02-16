@@ -1,6 +1,11 @@
-__author__ = 'Keznikl'
+"""
+Module for representing SAT formulas and their transformation to CNF.
+
+@author: Keznikl
+"""
 
 class Visitor:
+    """Interface for the visitor class over Formula sub-classes."""
     def acceptConjunction(self, f):
         pass
     def acceptDisjunction(self, f):
@@ -15,31 +20,68 @@ class Visitor:
         pass
 
 class Formula:
+    """Base class for all logical operators in a proposition formula. 
+    Instances represent the parse tree of a propositional formula.
+    """
+    
     def __init__(self, is_cnf = False):
+        """A formula can be initialized as already in CNF.
+        Checking is_cnf optimizes the runtime of the translation to CNF.        
+        """
         self.is_cnf = is_cnf
+        
     def toCNF(self):
+        """Convert the formula represented by this node to CNF using De-Morgan laws."""
         pass
+    
     def visit(self, visitor):
+        """Aplly the visitor on the current parse-tree node of the formula and pass it to children.""" 
         pass
+    
     def equals(self, f):
+        """True iff this formula parse tree equals the parse tree of f."""
         pass
+    
     def clone(self):
+        """Deep clone the parse tree represented by this node. Maintains the is_cnf attribute."""
         pass
+    
     def derivationTree(self):
+        """Simplify the parse tree into a derivation tree."""
         pass
+    
     def getChildren(self):
+        """Return the children of the current node (not recursive)."""
         return []
-    def encodeLocal(self):
+    
+    def encodeTseitin(self, newVar, subf):
+        """Encodes the derivation tree represented by this node and it's children using tseitin's encoding.
+        
+        newVar -- the new variable for the current node
+        subf -- the new variables for the children.
+        
+        """
         pass
 
+
 class Conjunction(Formula):
+    """Represents a conjunction in a parse tree of a propositional formula.
+    
+    Fields:
+    is_cnf -- indicates if the subtree of self is already in CNF
+    subf   -- list of sub-formulas in conjunction (childern in the parse tree)
+    
+    """
+    
     def __init__(self, subformulas, is_cnf=False):
         Formula.__init__(self, is_cnf)
         self.subf = subformulas    
+        
     def __str__(self):
+        """Convert to string so that elements of the conjunction are in parentheses and separated by '&'."""
         return "(%s)" % " & ".join([f.__str__() for f in self.subf])
        
-    def toCNF(self):
+    def toCNF(self):        
         if self.is_cnf:
             return self
         clauses = []
@@ -58,19 +100,21 @@ class Conjunction(Formula):
                 filtered.append(c)
         return Conjunction(sorted(filtered, key=lambda x: x.__str__()), is_cnf=True)
     
-    def encodeLocal(self, newVar, subf):
+    def encodeTseitin(self, newVar, subf):
         return Equivalence(newVar, Conjunction(subf)).toCNF()
+    
     def getChildren(self):
+        """ Return the childern of self in the parse tree."""
         return self.subf
+    
     def derivationTree(self):
         if len(self.subf) < 1:
-            raise Exception("To few subformulas in a conjunction")
+            raise Exception("Too few subformulas in a conjunction")
         elif len(self.subf) == 1:
             return self.subf[0].derivationTree()        
         else:
             return Conjunction([e.derivationTree() for e in self.subf])
         
-
     def equals(self, f):
         if not isinstance(f, Conjunction):
             return False
@@ -83,14 +127,27 @@ class Conjunction(Formula):
             f.visit(visitor)
 
     def clone(self):
+        """ Deep clone the parse subtree represetned by self."""
         return Conjunction([f.clone() for f in self.subf], is_cnf=self.is_cnf)
 
+
 class Disjunction(Formula):
+    """Represents a disjunction in a parse tree of a propositional formula.
+    
+    Fields:
+    is_cnf -- indicates if the subtree of self is already in CNF
+    subf   -- list of sub-formulas in disjunction (childern in the parse tree)
+    
+    """
+    
     def __init__(self, subformulas=[], is_cnf=False):
         Formula.__init__(self, is_cnf)
         self.subf = subformulas
+        
     def __str__(self):
+        """Convert to string so that elements of the disjunction are in parentheses and separated by '|'."""
         return "(%s)" % " | ".join([f.__str__() for f in self.subf])
+    
     def toCNF(self):
         if self.is_cnf:
             return self
@@ -128,9 +185,12 @@ class Disjunction(Formula):
             return self.subf[0].derivationTree()       
         else:
             return Disjunction([e.derivationTree() for e in self.subf])
+        
     def getChildren(self):
+        """ Return the childern of self in the parse tree."""
         return self.subf
-    def encodeLocal(self, newVar, subf):
+    
+    def encodeTseitin(self, newVar, subf):
         return Equivalence(newVar, Disjunction(subf)).toCNF()
     
     def equals(self, f):
@@ -145,14 +205,27 @@ class Disjunction(Formula):
             f.visit(visitor)
 
     def clone(self):
+        """ Deep clone the parse subtree represetned by self."""
         return Disjunction([f.clone() for f in self.subf], is_cnf=self.is_cnf)
+    
 
 class Negation(Formula):
+    """Represents a negation in a parse tree of a propositional formula.
+    
+    Fields:
+    is_cnf -- indicates if the subtree of self is already in CNF
+    subf   -- a sub-formula to be negated (a child in the parse tree)
+    
+    """
+    
     def __init__(self, subformula=None, is_cnf=False):
         Formula.__init__(self, is_cnf)
         self.subf = subformula
+        
     def __str__(self):
+        """Convert to string so that the child is prepended by '!'."""
         return "!%s" % self.subf.__str__()
+    
     def toCNF(self):
         if self.is_cnf:
             return self
@@ -169,9 +242,12 @@ class Negation(Formula):
         
     def derivationTree(self):    
         return Negation(self.subf.derivationTree())
+    
     def getChildren(self):
+        """ Return the list containing the sole child of self in the parse tree."""
         return [self.subf]
-    def encodeLocal(self, newVar, subf):
+    
+    def encodeTseitin(self, newVar, subf):
         assert len(subf) == 1
         return Equivalence(newVar, Negation(subf[0])).toCNF()
 
@@ -185,14 +261,29 @@ class Negation(Formula):
         self.subf.visit(visitor)
 
     def clone(self):
+        """ Deep clone the parse subtree represetned by self."""
         return Negation(self.subf.clone(), is_cnf=self.is_cnf)
 
+
 class Variable(Formula):
+    """Represents a variable in a parse tree of a propositional formula.
+    
+    Fields:
+    is_cnf -- indicates if the subtree of self is already in CNF. 
+              Although could be always True, both values are used to distinquish 
+              between the original parse tree and the converted one.
+    name   -- name of the variable
+    
+    """
+    
     def __init__(self, name, is_cnf=False):
         Formula.__init__(self, is_cnf)
         self.name = name
+        
     def __str__(self):
+        """Return the variable name."""
         return self.name
+    
     def toCNF(self):
         if self.is_cnf:
             return self
@@ -200,28 +291,43 @@ class Variable(Formula):
     
     def derivationTree(self):    
         return self.clone()
+    
     def getChildren(self):
         return []
-    def encodeLocal(self, newVar, subf):
-        assert False, "encodeLocal shouldn't be called on variable nodes"   
+    
+    def encodeTseitin(self, newVar, subf):
+        assert False, "encodeTseitin shouldn't be called on variable nodes"   
              
     def equals(self, c):
         if not isinstance(c, Variable):
             return False
         return self.name == c.name
+    
     def visit(self, visitor):
         visitor.acceptVariable(self)
+        
     def clone(self):
+        """Clone the variable."""
         return Variable(self.name, is_cnf=self.is_cnf)
   
 
 class Implication(Formula):
+    """Represents an implication in a parse tree of a propositional formula.
+    
+    Fields:
+    is_cnf     -- indicates if the subtree of self is already in CNF 
+    premise    -- the premise (left part) of the implication
+    conclusion -- the conclusion (right part) of the implication
+    
+    """
+    
     def __init__(self, premise, conclusion, is_cnf=False):
         Formula.__init__(self, is_cnf)
         self.premise = premise
         self.conclusion = conclusion
 
     def __str__(self):
+        """Convert to string in the form (premise => conclusion)."""
         return "(%s => %s)" % (self.premise.__str__(), self.conclusion.__str__())
 
     def toCNF(self):
@@ -229,9 +335,11 @@ class Implication(Formula):
     
     def derivationTree(self):    
         return Implication(self.premise.derivationTree(), self.conclusion.derivationTree())
+    
     def getChildren(self):
         return [self.premise, self.conclusion]
-    def encodeLocal(self, newVar, subf):
+    
+    def encodeTseitin(self, newVar, subf):
         assert len(subf) == 2
         return Equivalence(newVar, Implication(subf[0], subf[1])).toCNF()
 
@@ -246,16 +354,27 @@ class Implication(Formula):
         self.conclusion.visit(visitor)
 
     def clone(self):
+        """ Deep clone the parse subtree represetned by self."""
         return Implication(self.premise.clone(), self.conclusion.clone())
 
 
 class Equivalence(Formula):
+    """Represents an equivalence in a parse tree of a propositional formula.
+    
+    Fields:
+    is_cnf -- indicates if the subtree of self is already in CNF 
+    left   -- the left part of the equivalence
+    right  -- the right part of the equivalence
+    
+    """
+    
     def __init__(self, left, right, is_cnf=False):
         Formula.__init__(self, is_cnf)
         self.left = left
         self.right = right
 
     def __str__(self):
+        """Convert to string in the form (left <=> right)."""
         return "(%s <=> %s)" % (self.left.__str__(), self.right.__str__())
 
     def toCNF(self):
@@ -263,9 +382,11 @@ class Equivalence(Formula):
     
     def derivationTree(self):    
         return Equivalence(self.left.derivationTree(), self.right.derivationTree())
+    
     def getChildren(self):
         return [self.left, self.right]
-    def encodeLocal(self, newVar, subf):
+    
+    def encodeTseitin(self, newVar, subf):
         assert len(subf) == 2
         return Equivalence(newVar, Equivalence(subf[0], subf[1])).toCNF()
 
@@ -280,6 +401,7 @@ class Equivalence(Formula):
         self.right.visit(visitor)
 
     def clone(self):
+        """ Deep clone the parse subtree represetned by self."""
         return Equivalence(self.left.clone(), self.right.clone())
 
 

@@ -17,6 +17,8 @@ local.properties
 .loadpath
 out/
 .idea/
+*.sh
+*.zip
 
 # External tool builders
 .externalToolBuilders/

@@ -1,8 +1,21 @@
-__author__ = 'Keznikl'
+"""
+Module containing factory methods for generating SPL-specific propositional formulas in CNF.
+
+@author: Keznikl
+"""
 
 from formula import *
 
 def several_perf_posibilites_unknown_cause(method = "", possibilities = [], cnf = False):
+    """Return propositional skeleton of a SPL formula expressing that performance of the 
+    given method depends on one of the listed possibilities.
+    
+    Keyword arguments:
+    method        -- the method dependency of which is expressed
+    possibilities -- list of possibilities one of which the method depends on
+    cnf           -- indicates, whether the resulting formula should be in CNF
+    
+    """
     if not possibilities:
         return
     ret = Disjunction([
@@ -18,6 +31,16 @@ def several_perf_posibilites_unknown_cause(method = "", possibilities = [], cnf 
         return ret
 
 def several_perf_posibilites_use_fastest(method = "", possibilities = [], cnf = False):
+    """Return list of formulas represenring the propositional skeleton of a SPL formula 
+    expressing that performance of the given method depends on one the fastest of 
+    the listed possibilities.
+    
+    Keyword arguments:
+    method        -- the method dependency of which is expressed
+    possibilities -- list of possibilities one of which the method depends on
+    cnf           -- indicates, whether the resulting list of formulas should be in CNF
+    
+    """
     if not possibilities:
         return
     ret =  [
@@ -41,7 +64,7 @@ def several_perf_posibilites_use_fastest(method = "", possibilities = [], cnf = 
              for a in possibilities for b in possibilities if a != b]
         )]  + [
         Conjunction(
-            # (Pa<b <=> !Pb<a)
+            # (Sa => (Pma1&Pma2))
             [Implication(
                 Variable("S" + p),
                 Conjunction([

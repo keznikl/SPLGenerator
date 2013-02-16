@@ -1,9 +1,14 @@
-__author__ = 'Keznikl'
+"""
+Module for converting parse tree of a CNF formula into DIMACS format.
 
+@author: Keznikl
+"""
 from formula import *
 import sys
 
 class DimacsFormatVisitor():
+    """Visitor that traverses the parse tree of CNF formula and creates its DIMACS representation."""
+    
     def __init__(self):
         self.variables = {}
         self.var_counter = 1
@@ -47,5 +52,6 @@ class DimacsFormatVisitor():
 
     def numClauses(self):
         return len(self.clauses)
+    
     def numVars(self):
         return self.var_counter - 1
