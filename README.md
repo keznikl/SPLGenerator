@@ -3,7 +3,7 @@ Generator of benchmark SPL formulas
 
 ##Usage:
 	
-	python main.py [min_vars min_clauses] [random seed]> [your favorite SAT solver]
+	python main.py [min_vars min_clauses] [random seed] > [your favorite SAT solver]
 
 Generates a propositional skeletons of a single SPL-specific benchmark formula in the DIMACS format.
 
